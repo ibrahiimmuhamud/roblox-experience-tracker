@@ -1,0 +1,29 @@
+name: Collect snapshot
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # every 6 hours
+  workflow_dispatch:         # allow manual runs
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Collect snapshot
+        run: python src/main.py collect
+
+      - name: Commit updated data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f data/snapshots.db
+          git diff --staged --quiet || git commit -m "Add snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push
